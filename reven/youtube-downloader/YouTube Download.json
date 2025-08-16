@@ -1,0 +1,417 @@
+{
+  "Name": "YouTube Download",
+  "Type": 0,
+  "Revision": 74,
+  "Description": "Downloads a video from YouTube",
+  "Icon": "fab fa-youtube:#EA2F27",
+  "Properties": {
+    "Fields": [],
+    "Variables": {}
+  },
+  "Parts": [
+    {
+      "Uid": "c0807c25-7d23-44d0-8a40-2485a265c75b",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.Web.FlowElements.InputUrl",
+      "xPos": 360,
+      "yPos": 30,
+      "Icon": "fas fa-globe",
+      "Label": "Input URL",
+      "Inputs": 0,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "72e6e684-03a4-41c5-bd15-1c0d61db5715"
+        }
+      ],
+      "Type": 0,
+      "Model": {
+        "Download": false
+      }
+    },
+    {
+      "Uid": "ef5283ca-3f6c-44b9-a0bb-09cc4c3fae9d",
+      "Name": "Download YouTube Video",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.Function",
+      "xPos": 230,
+      "yPos": 230,
+      "Icon": "svg:javascript",
+      "Label": "Function",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "4fbb07d7-6033-46ba-a04a-f604928567da"
+        }
+      ],
+      "Type": 2,
+      "Model": {
+        "Outputs": 1,
+        "Code": "let url = Variables.Url;\n\nLogger.ILog(\u0027URL: \u0027 \u002B url);\n\nif(url.indexOf(\u0027\u0026\u0027) \u003E 0)\n{\n\turl = url.substring(0, url.indexOf(\u0027\u0026\u0027));\n\tLogger.ILog(\u0027URL Updated: \u0027 \u002B url);\n}\n\nlet ffmpeg = Flow.GetToolPath(\u0027ffmpeg\u0027);\n\nlet youtubeDLUpdate = \u0027/app/common/yt-dlp/yt-dlp-update\u0027;\nif(System.IO.File.Exists(youtubeDLUpdate))\n{\n\tFlow.Execute({\n\t\tcommand: youtubeDLUpdate\n\t});\n}\n\nlet youtubeDL = Flow.GetToolPath(\u0027yt-dlp\u0027) || \u0027/app/common/yt-dlp/yt-dlp\u0027;\n\nlet process = Flow.Execute({\n\tcommand: youtubeDL,\n\targumentList: [\n\t\t\u0027--no-playlist\u0027,\n\t\t\u0027--write-thumbnail\u0027,\n\t\t\u0027--ffmpeg-location\u0027,\n\t\tffmpeg,\n\t\t\u0027--dump-json\u0027,\n\t\turl\n\t]\n});\n\nif(process.standardOutput)\n\tLogger.ILog(\u0027Standard output: \u0027 \u002B process.standardOutput);\nif(process.standardError)\n\tLogger.ILog(\u0027Standard error: \u0027 \u002B process.standardError);\n\nif(process.exitCode !== 0)\n\treturn Flow.Fail(\u0027Failed getting video information JSON\u0027);\n\n\nlet title = null;\nlet description = null;\nlet channel = null;\nlet thumbnail = null;\n\ntry {\n    let json = JSON.parse(process.standardOutput);\n    title = json.title;\n    description = json.description;\n    channel = json.channel;\n    thumbnail = json.thumbnail;\n} catch (err) {\n    Logger.WLog(\u0027JSON parse failed, trying regex fallback\u0027);\n\n    const out = process.standardOutput;\n\n    const titleMatch = out.match(/\u0022title\u0022\\s*:\\s*\u0022([^\u0022]\u002B)\u0022/);\n    if (titleMatch \u0026\u0026 titleMatch[1]) {\n        title = titleMatch[1];\n        Logger.WLog(\u0027Recovered title from regex: \u0027 \u002B title);\n    }\n\n    const thumbMatch = out.match(/\u0022thumbnail\u0022\\s*:\\s*\u0022([^\u0022]\u002B)\u0022/);\n    if (thumbMatch \u0026\u0026 thumbMatch[1]) {\n        thumbnail = thumbMatch[1];\n        Logger.WLog(\u0027Recovered thumbnail from regex: \u0027 \u002B thumbnail);\n    }\n\n    if (!title) {\n        return Flow.Fail(\u0027Failed to get video title from yt-dlp output\u0027);\n    }\n}\n\n\nLogger.ILog(\u0027Title: \u0027 \u002B title);\nLogger.ILog(\u0027Description: \u0027 \u002B description);\nLogger.ILog(\u0027Channel: \u0027 \u002B channel);\n\nlet name = Flow.GetSafeFilename(title) \u002B \u0027.mkv\u0027;\nVariables.OutputName = name;\nlet output = Flow.TempPath \u002B name;\nLogger.ILog(\u0027Output: \u0027 \u002B output);\n\nif(thumbnail){\n\tthumbnail = Flow.DownloadFile(thumbnail);\n\tif(thumbnail){\n\t\tFlow.SetThumbnail(thumbnail);\n\n\t\tLogger.ILog(\u0027Found Thumanil Image: \u0027 \u002B thumbnail);\n\t\tlet thumbFile = Flow.GetSafeFilename(title) \u002B \u0027-poster.webp\u0027;\n\n\t\tLogger.ILog(\u0027Thumanil Image: \u0027 \u002B thumbnail);\n\t\tlet thumbOutput = System.IO.Path.Combine(Flow.TempPath, thumbFile);\n\t\tLogger.ILog(\u0027Thumb Output: \u0027 \u002B thumbOutput);\n\t\tSystem.IO.File.Move(thumbnail, thumbOutput);\n\t\tVariables.ThumbFile = thumbFile;\n\t\tVariables.ThumbOutput = thumbOutput;\n\t}\n}\n\n\nprocess = Flow.Execute({\n\tcommand: youtubeDL,\n\targumentList: [\n\t\t\u0027-o\u0027,\n\t\toutput,\n\t\t\u0027--ffmpeg-location\u0027,\n\t\tffmpeg,\n\t\t\u0027--embed-thumbnail\u0027,\n\t\t\u0027-t\u0027, \u0027mkv\u0027,\n\t\t//\u0027--sponsorblock-remove\u0027,\n\t\t//\u0027all\u0027,\n\t\t\u0027--no-playlist\u0027,\n\t\turl\n\t]\n});\n\nFlow.SetDisplayName(title);\n\nif(process.standardOutput)\n\tLogger.ILog(\u0027Standard output: \u0027 \u002B process.standardOutput);\nif(process.standardError)\n\tLogger.ILog(\u0027Standard error: \u0027 \u002B process.standardError);\n\n\nif(System.IO.File.Exists(output) == false)\n\treturn Flow.Fail(\u0027Output file does not exist\u0027);\n\nlet size = new System.IO.FileInfo(output).Length;\nif(size \u003C 10)\n\treturn Flow.Fail(\u0027Output file has no data\u0027);\n\nFlow.SetOriginalSize(size);\n\nLogger.ILog(\u0027Output file created: \u0027 \u002B output);\nFlow.SetWorkingFile(output);\nreturn 1;"
+      }
+    },
+    {
+      "Uid": "3bd84096-4ec9-4336-aff0-aa5699a202a1",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.Nextcloud.FlowElements.UploadToNextcloud",
+      "xPos": 1030,
+      "yPos": 300,
+      "Icon": "svg:nextcloud",
+      "Label": "Upload to Nextcloud",
+      "Inputs": 1,
+      "Outputs": 1,
+      "CustomColor": "#0082c9",
+      "Type": 2,
+      "Model": {
+        "DestinationPath": "/.hidden/ff-downloads/videos/{folder}/{file.Name}",
+        "File": ""
+      }
+    },
+    {
+      "Uid": "4be13fbd-c202-469d-b1e9-1ea760313214",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.FailFlow",
+      "xPos": 490,
+      "yPos": 370,
+      "Icon": "fas fa-exclamation-triangle",
+      "Label": "Fail Flow",
+      "Inputs": 1,
+      "Outputs": 0,
+      "CustomColor": "var(--error)",
+      "Type": 3,
+      "Model": {
+        "Reason": "folder variable is not defined"
+      }
+    },
+    {
+      "Uid": "72e6e684-03a4-41c5-bd15-1c0d61db5715",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.SystemElements.IsDocker",
+      "xPos": 360,
+      "yPos": 120,
+      "Icon": "fab fa-docker",
+      "Label": "Is Docker",
+      "Inputs": 1,
+      "Outputs": 2,
+      "CustomColor": "#2481e4",
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "ef5283ca-3f6c-44b9-a0bb-09cc4c3fae9d"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "02e55272-ebf2-4051-ad84-1ea52265757d"
+        }
+      ],
+      "Type": 3,
+      "Model": {}
+    },
+    {
+      "Uid": "02e55272-ebf2-4051-ad84-1ea52265757d",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.Reprocess",
+      "xPos": 510,
+      "yPos": 240,
+      "Icon": "fas fa-redo",
+      "Label": "Reprocess",
+      "Inputs": 1,
+      "Outputs": 0,
+      "Type": 2,
+      "Model": {
+        "Node": {
+          "name": "unraid-nvidia-node",
+          "uid": "93f62167-c06d-41c9-86e4-e1519195f858",
+          "type": "FileFlows.Shared.Models.ProcessingNode"
+        }
+      }
+    },
+    {
+      "Uid": "e74fd891-ab99-4876-8b68-d394c7e647ff",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.File.MoveFile",
+      "xPos": 610,
+      "yPos": 730,
+      "Icon": "fas fa-file-export",
+      "Label": "Move File",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "0ea41e94-76e6-4aa1-9cbd-c127e59cfe36"
+        }
+      ],
+      "Type": 2,
+      "Model": {
+        "InputFile": null,
+        "DestinationPath": "/media/music-videos",
+        "DestinationFile": "{OutputName}",
+        "MoveFolder": false,
+        "DeleteOriginal": false,
+        "AdditionalFiles": [],
+        "AdditionalFilesFromOriginal": false,
+        "PreserverOriginalDates": false
+      }
+    },
+    {
+      "Uid": "0ea41e94-76e6-4aa1-9cbd-c127e59cfe36",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.File.MoveFile",
+      "xPos": 630,
+      "yPos": 860,
+      "Icon": "fas fa-file-export",
+      "Label": "Move File",
+      "Inputs": 1,
+      "Outputs": 2,
+      "Type": 2,
+      "Model": {
+        "InputFile": "{ThumbOutput}",
+        "DestinationPath": "/media/music-videos",
+        "DestinationFile": "{ThumbFile}",
+        "MoveFolder": false,
+        "DeleteOriginal": false,
+        "AdditionalFiles": null,
+        "AdditionalFilesFromOriginal": false,
+        "PreserverOriginalDates": false
+      }
+    },
+    {
+      "Uid": "b534756b-064e-4198-af38-13b6ecb6e787",
+      "Name": "FFMPEG Builder: Start",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderStart",
+      "xPos": 190,
+      "yPos": 450,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Start",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "6f4be01d-a310-445e-9fc2-fb6d0cb20119"
+        }
+      ],
+      "Type": 4,
+      "Model": {}
+    },
+    {
+      "Uid": "b019fcc4-f536-41ae-b77b-b3e119444a8c",
+      "Name": "FFMPEG Builder: Executor",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderExecutor",
+      "xPos": 650,
+      "yPos": 620,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Executor",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "e74fd891-ab99-4876-8b68-d394c7e647ff"
+        }
+      ],
+      "Type": 5,
+      "Model": {
+        "HardwareDecoding": "auto",
+        "Strictness": "experimental",
+        "KeepModel": false
+      }
+    },
+    {
+      "Uid": "9e77d518-0903-4cdd-a12d-44776e13d5ac",
+      "Name": "FFMPEG Builder: Audio Convert",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderAudioConvert",
+      "xPos": 190,
+      "yPos": 700,
+      "Icon": "fas fa-comments",
+      "Label": "FFMPEG Builder: Audio Convert",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "80ca834d-7d73-45d5-924b-5ca5510670ff"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "80ca834d-7d73-45d5-924b-5ca5510670ff"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Codec": "aac",
+        "PcmFormat": "pcm_s16le",
+        "Channels": 0,
+        "Bitrate": 0,
+        "BitratePerChannel": false,
+        "SampleRate": 0,
+        "CustomTrackSelection": false,
+        "TrackSelectionOptions": []
+      }
+    },
+    {
+      "Uid": "80ca834d-7d73-45d5-924b-5ca5510670ff",
+      "Name": "Video Encode Optimized",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderVideoEncodeOptimized",
+      "xPos": 190,
+      "yPos": 820,
+      "Icon": "far fa-file-video",
+      "Label": "Video Encode Optimized",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "743a51d1-9985-48fa-ab31-ad3b2b2e4848"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "743a51d1-9985-48fa-ab31-ad3b2b2e4848"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Codec": "hevc",
+        "ForceCodec": true,
+        "Encoder": "",
+        "Mode": 0,
+        "MaxSizePercent": 90,
+        "MaxBitrateSD": 1000,
+        "MaxBitrate720": 2500,
+        "MaxBitrate1080": 7500,
+        "MaxBitrate4k": 12000,
+        "MinVmaf": 90,
+        "VmafFps": 15,
+        "MaxIterations": 2,
+        "QualityLowerBound": 17,
+        "QualityUpperBound": 25,
+        "Samples": 1,
+        "SampleLengthSeconds": 6,
+        "EncoderSpeed": 0
+      }
+    },
+    {
+      "Uid": "4fbb07d7-6033-46ba-a04a-f604928567da",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.ReadVideoInfo",
+      "xPos": 230,
+      "yPos": 330,
+      "Icon": "fas fa-video",
+      "Label": "Read Video Info",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "b534756b-064e-4198-af38-13b6ecb6e787"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "4be13fbd-c202-469d-b1e9-1ea760313214"
+        }
+      ],
+      "Type": 3,
+      "Model": {}
+    },
+    {
+      "Uid": "6f4be01d-a310-445e-9fc2-fb6d0cb20119",
+      "Name": "FFMPEG Builder: Audio Normalization",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderAudioNormalization",
+      "xPos": 190,
+      "yPos": 560,
+      "Icon": "fas fa-volume-up",
+      "Label": "FFMPEG Builder: Audio Normalization",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "9e77d518-0903-4cdd-a12d-44776e13d5ac"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "9e77d518-0903-4cdd-a12d-44776e13d5ac"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "AllAudio": false,
+        "TwoPass": true,
+        "Pattern": null,
+        "NotMatching": false
+      }
+    },
+    {
+      "Uid": "743a51d1-9985-48fa-ab31-ad3b2b2e4848",
+      "Name": "FFMPEG Builder: Trim Silence",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderTrimSilence",
+      "xPos": 650,
+      "yPos": 480,
+      "Icon": "fas fa-volume-mute",
+      "Label": "FFMPEG Builder: Trim Silence",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "b019fcc4-f536-41ae-b77b-b3e119444a8c"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "b019fcc4-f536-41ae-b77b-b3e119444a8c"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "MinimumSilenceDuration": 5,
+        "SilenceThresholdDb": -30
+      }
+    }
+  ]
+}

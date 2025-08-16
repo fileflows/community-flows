@@ -1,0 +1,668 @@
+{
+  "Name": "Movie Converter",
+  "Type": 0,
+  "Revision": 26,
+  "Description": "Convert movies  to HEVC with AAC 5.1 audio and moves them into the a converted folder.",
+  "Icon": "fas fa-film",
+  "Properties": {
+    "Fields": [],
+    "Variables": {}
+  },
+  "Parts": [
+    {
+      "Uid": "736aba9c-ba98-43c6-8799-91d363e1ab48",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.VideoFile",
+      "xPos": 150,
+      "yPos": 30,
+      "Icon": "fas fa-video",
+      "Label": "Video File",
+      "Inputs": 0,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "1a66b043-b6bf-47f1-8c23-114eda001914"
+        }
+      ],
+      "Type": 0
+    },
+    {
+      "Uid": "1a66b043-b6bf-47f1-8c23-114eda001914",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "MetaNodes.TheMovieDb.MovieLookup",
+      "xPos": 150,
+      "yPos": 130,
+      "Icon": "fas fa-film",
+      "Label": "Movie Lookup",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "43599612-363a-4447-9024-a3fc174fb06c"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "43599612-363a-4447-9024-a3fc174fb06c"
+        }
+      ],
+      "ErrorConnection": {
+        "Input": 1,
+        "Output": -1,
+        "InputNode": "43599612-363a-4447-9024-a3fc174fb06c"
+      },
+      "Type": 3,
+      "Model": {
+        "UseFolderName": true
+      }
+    },
+    {
+      "Uid": "43599612-363a-4447-9024-a3fc174fb06c",
+      "Name": "FFMPEG Builder: Start",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderStart",
+      "xPos": 150,
+      "yPos": 270,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Start",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "1aa85b4f-27e4-48a2-ad8b-8f282d90f887"
+        }
+      ],
+      "Type": 4
+    },
+    {
+      "Uid": "1aa85b4f-27e4-48a2-ad8b-8f282d90f887",
+      "Name": "Remux to MKV",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderRemuxToMkv",
+      "xPos": 150,
+      "yPos": 370,
+      "Icon": "svg:mkv",
+      "Label": "FFMPEG Builder: Remux to MKV",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "9a220859-cc1d-4f19-8f72-d1ff50a31f1b"
+        }
+      ],
+      "Type": 6
+    },
+    {
+      "Uid": "ef346f88-e2bf-4569-aa22-10eafc63ea62",
+      "Name": "FFMPEG Builder: Crop Black Bars",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderCropBlackBars",
+      "xPos": 150,
+      "yPos": 590,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Crop Black Bars",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "f8e14e38-dcb8-4f5d-9fbf-7f8bb9e37085"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "f8e14e38-dcb8-4f5d-9fbf-7f8bb9e37085"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "CroppingThreshold": 10
+      }
+    },
+    {
+      "Uid": "5719b87a-4838-43af-8d2a-6603fa5e8339",
+      "Name": "Remove Unwanted Subtitle Languages",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FFmpegBuilderLanguageRemover",
+      "xPos": 150,
+      "yPos": 950,
+      "Icon": "fas fa-comment-dots",
+      "Label": "FFMPEG Builder: Language Remover",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "19fb4c81-0040-47e1-b0bd-99056aac2440"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "19fb4c81-0040-47e1-b0bd-99056aac2440"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "StreamType": "Subtitle",
+        "Languages": [
+          "eng"
+        ],
+        "NotMatching": true
+      }
+    },
+    {
+      "Uid": "19fb4c81-0040-47e1-b0bd-99056aac2440",
+      "Name": "Default Language to \u0027eng\u0027",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderAudioSetLanguage",
+      "xPos": 510,
+      "yPos": 190,
+      "Icon": "fas fa-comment-dots",
+      "Label": "FFMPEG Builder: Set Language",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "bc1a9522-e635-4588-89d5-b356a369694b"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "bc1a9522-e635-4588-89d5-b356a369694b"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "StreamType": "Both",
+        "Language": "eng"
+      }
+    },
+    {
+      "Uid": "bc1a9522-e635-4588-89d5-b356a369694b",
+      "Name": "Primary Audio",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderAudioLanguageConverter",
+      "xPos": 510,
+      "yPos": 290,
+      "Icon": "fas fa-comment-dots",
+      "Label": "FFMPEG Builder: Audio Language Converter",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "79140e90-5f4e-41c6-b672-05ae78af9d5c"
+        },
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "5e7b3fb8-faae-4b31-a4b3-bf85f1eb49f6"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Languages": [
+          "eng"
+        ],
+        "RemoveOthers": true,
+        "Codec": "aac",
+        "Channels": 6,
+        "Bitrate": 64
+      }
+    },
+    {
+      "Uid": "79140e90-5f4e-41c6-b672-05ae78af9d5c",
+      "Name": "Fall Back Audio",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderAudioLanguageConverter",
+      "xPos": 660,
+      "yPos": 390,
+      "Icon": "fas fa-comment-dots",
+      "Label": "FFMPEG Builder: Audio Language Converter",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "91fdd200-4ae5-4d0d-87f3-41b0554fe76a"
+        },
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "5e7b3fb8-faae-4b31-a4b3-bf85f1eb49f6"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Languages": [
+          "eng"
+        ],
+        "Codec": "aac",
+        "Channels": 0,
+        "Bitrate": 64
+      }
+    },
+    {
+      "Uid": "91fdd200-4ae5-4d0d-87f3-41b0554fe76a",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.FailFlow",
+      "xPos": 700,
+      "yPos": 510,
+      "Icon": "fas fa-exclamation-triangle",
+      "Label": "Fail Flow",
+      "Inputs": 1,
+      "Outputs": 0,
+      "CustomColor": "var(--error)",
+      "Type": 3,
+      "Model": {
+        "Reason": "Failed to find any wanted audio languages."
+      }
+    },
+    {
+      "Uid": "371a2fd9-0ad1-4d93-9954-8333aee6979d",
+      "Name": "FFMPEG Builder: Executor",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderExecutor",
+      "xPos": 470,
+      "yPos": 810,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Executor",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "a60fca83-3058-48c2-accf-f700c075a3fc"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "a60fca83-3058-48c2-accf-f700c075a3fc"
+        }
+      ],
+      "ErrorConnection": {
+        "Input": 1,
+        "Output": -1,
+        "InputNode": "7c382f74-6db1-4389-be2c-dd97653cb7f8"
+      },
+      "Type": 5,
+      "Model": {
+        "HardwareDecoding": "auto",
+        "Strictness": "experimental"
+      }
+    },
+    {
+      "Uid": "a60fca83-3058-48c2-accf-f700c075a3fc",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.File.MoveFile",
+      "xPos": 950,
+      "yPos": 770,
+      "Icon": "fas fa-file-export",
+      "Label": "Move File",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "ad26ca8b-72b5-4f43-ac9c-cc637667f40c"
+        }
+      ],
+      "Type": 2,
+      "Model": {
+        "DestinationPath": "/media/downloads/converted/movies",
+        "DeleteOriginal": true,
+        "MoveFolder": true
+      }
+    },
+    {
+      "Uid": "ad26ca8b-72b5-4f43-ac9c-cc637667f40c",
+      "Name": "Delete Source Folder",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.File.DeleteSourceDirectory",
+      "xPos": 840,
+      "yPos": 920,
+      "Icon": "far fa-trash-alt",
+      "Label": "Delete Source Folder",
+      "Inputs": 1,
+      "Outputs": 2,
+      "Type": 2,
+      "Model": {
+        "IfEmpty": true,
+        "IncludePatterns": [
+          "*.mkv",
+          "*.mp4",
+          "*.avi",
+          "*.divx",
+          "*.mov",
+          "*.mpeg",
+          "*.mpe"
+        ]
+      }
+    },
+    {
+      "Uid": "0b0240ef-b753-4b96-a665-852796bf0ff3",
+      "Name": "CPU Fail-over Encode",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderVideoEncodeSimple",
+      "xPos": 1060,
+      "yPos": 320,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Video Encode",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "5f3a9318-2c76-4fa9-b1da-66bf91f29d18"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Codec": "h265",
+        "Encoder": "CPU",
+        "Quality": 6,
+        "Speed": 2
+      }
+    },
+    {
+      "Uid": "5f3a9318-2c76-4fa9-b1da-66bf91f29d18",
+      "Name": "CPU Fail-over Executor",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderExecutor",
+      "xPos": 1060,
+      "yPos": 550,
+      "Icon": "far fa-file-video",
+      "Label": "FFMPEG Builder: Executor",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "a60fca83-3058-48c2-accf-f700c075a3fc"
+        }
+      ],
+      "Type": 5,
+      "Model": {
+        "HardwareDecoding": false,
+        "Strictness": "experimental"
+      }
+    },
+    {
+      "Uid": "363ccda8-8aa8-4413-ae97-1e222f441d9d",
+      "Name": "Optimized - Excellent",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderVideoEncodeOptimized",
+      "xPos": 30,
+      "yPos": 820,
+      "Icon": "far fa-file-video",
+      "Label": "Video Encode Optimized",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "5719b87a-4838-43af-8d2a-6603fa5e8339"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "5719b87a-4838-43af-8d2a-6603fa5e8339"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Codec": "hevc",
+        "Encoder": "",
+        "Mode": 0,
+        "MaxSizePercent": 90,
+        "MinVmaf": 93,
+        "MaxBitrate": 10000,
+        "Samples": 3,
+        "SampleLengthSeconds": 20,
+        "QualityLowerBound": 15,
+        "QualityUpperBound": 25,
+        "VmafFps": 0,
+        "MaxIterations": 5,
+        "EncoderSpeed": -1,
+        "ForceCodec": true,
+        "Quality": 1
+      }
+    },
+    {
+      "Uid": "c0a4587e-0b1a-4b67-8f3b-418bc4a4f3f8",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.FailFlow",
+      "xPos": 480,
+      "yPos": 920,
+      "Icon": "fas fa-exclamation-triangle",
+      "Label": "Fail Flow",
+      "Inputs": 1,
+      "Outputs": 0,
+      "CustomColor": "var(--error)",
+      "Type": 3,
+      "Model": {
+        "Reason": "test"
+      }
+    },
+    {
+      "Uid": "9a220859-cc1d-4f19-8f72-d1ff50a31f1b",
+      "Name": "FFMPEG Builder: Trim End Credits",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderTrimEndCredits",
+      "xPos": 150,
+      "yPos": 470,
+      "Icon": "fas fa-cut",
+      "Label": "FFMPEG Builder: Trim End Credits",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "ef346f88-e2bf-4569-aa22-10eafc63ea62"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "ef346f88-e2bf-4569-aa22-10eafc63ea62"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "MinCreditsDuration": 60,
+        "Padding": 2
+      }
+    },
+    {
+      "Uid": "5e7b3fb8-faae-4b31-a4b3-bf85f1eb49f6",
+      "Name": "Set Audio/Subtitle Titles",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderSetTrackTitles",
+      "xPos": 470,
+      "yPos": 550,
+      "Icon": "fas fa-heading",
+      "Label": "FFMPEG Builder: Set Track Titles",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "232ab31d-7f9d-42c7-9fdf-fa5c7dcf620f"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "232ab31d-7f9d-42c7-9fdf-fa5c7dcf620f"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "StreamType": "Both",
+        "Format": "lang / codec / channels",
+        "Separator": " / ",
+        "CommentaryFormat": "Commentary"
+      }
+    },
+    {
+      "Uid": "232ab31d-7f9d-42c7-9fdf-fa5c7dcf620f",
+      "Name": "Clear Video Title",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderSetTrackTitles",
+      "xPos": 470,
+      "yPos": 690,
+      "Icon": "fas fa-heading",
+      "Label": "FFMPEG Builder: Set Track Titles",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "371a2fd9-0ad1-4d93-9954-8333aee6979d"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "371a2fd9-0ad1-4d93-9954-8333aee6979d"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "StreamType": "Video",
+        "Format": "",
+        "Separator": " / ",
+        "CommentaryFormat": "Commentary"
+      }
+    },
+    {
+      "Uid": "7c382f74-6db1-4389-be2c-dd97653cb7f8",
+      "Name": "No space left?",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.FailReasonMatches",
+      "xPos": 1020,
+      "yPos": 140,
+      "Icon": "fas fa-exclamation-triangle",
+      "Label": "Fail Reason Matches",
+      "Inputs": 1,
+      "Outputs": 2,
+      "CustomColor": "var(--error)",
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "0b0240ef-b753-4b96-a665-852796bf0ff3"
+        }
+      ],
+      "Type": 3,
+      "Model": {
+        "Reason": "No space left"
+      }
+    },
+    {
+      "Uid": "f8e14e38-dcb8-4f5d-9fbf-7f8bb9e37085",
+      "Name": "",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "MetaNodes.TheMovieDb.MovieKeywordMatches",
+      "xPos": 150,
+      "yPos": 710,
+      "Icon": "fas fa-equals",
+      "Label": "Movie Keyword Matches",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "363ccda8-8aa8-4413-ae97-1e222f441d9d"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "a3d2ea07-c461-43b1-acf6-609c8d57545f"
+        }
+      ],
+      "Type": 3,
+      "Model": {
+        "Keywords": [
+          "super"
+        ]
+      }
+    },
+    {
+      "Uid": "a3d2ea07-c461-43b1-acf6-609c8d57545f",
+      "Name": "Optimized - Good",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.VideoNodes.FfmpegBuilderNodes.FfmpegBuilderVideoEncodeOptimized",
+      "xPos": 220,
+      "yPos": 820,
+      "Icon": "far fa-file-video",
+      "Label": "Video Encode Optimized",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "5719b87a-4838-43af-8d2a-6603fa5e8339"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "5719b87a-4838-43af-8d2a-6603fa5e8339"
+        }
+      ],
+      "Type": 6,
+      "Model": {
+        "Codec": "hevc",
+        "Encoder": "",
+        "Mode": 0,
+        "MaxSizePercent": 90,
+        "MinVmaf": 93,
+        "MaxBitrate": 10000,
+        "Samples": 3,
+        "SampleLengthSeconds": 20,
+        "QualityLowerBound": 15,
+        "QualityUpperBound": 25,
+        "VmafFps": 0,
+        "MaxIterations": 5,
+        "EncoderSpeed": -1,
+        "Quality": 0,
+        "ForceCodec": true
+      }
+    }
+  ]
+}
