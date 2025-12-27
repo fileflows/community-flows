@@ -1,0 +1,157 @@
+{
+  "Name": "Grab Album Lists in Artists Folders",
+  "Type": 0,
+  "Revision": 16,
+  "Description": "Custom file based flow.",
+  "Icon": "fas fa-file",
+  "Properties": {
+    "Fields": [],
+    "Variables": {}
+  },
+  "Parts": [
+    {
+      "Uid": "22e0804c-fbd8-41c3-900d-ef542ba5b441",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.File.InputFile",
+      "xPos": 570,
+      "yPos": 50,
+      "Icon": "far fa-file",
+      "Label": "Input File",
+      "Inputs": 0,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "e2d4b33e-874c-49cd-b474-6c49afb7d587"
+        }
+      ],
+      "Type": 0
+    },
+    {
+      "Uid": "e2d4b33e-874c-49cd-b474-6c49afb7d587",
+      "Name": "Check File Name",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.File.FileNameMatches",
+      "xPos": 570,
+      "yPos": 130,
+      "Icon": "fas fa-equals",
+      "Label": "File Name Matches",
+      "Inputs": 1,
+      "Outputs": 2,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "f6f94a75-7881-4560-b2d7-e1f74f06a9f1"
+        },
+        {
+          "Input": 1,
+          "Output": 2,
+          "InputNode": "2dcefc95-af1d-41ca-9673-180f950f6dde"
+        }
+      ],
+      "Type": 3,
+      "Model": {
+        "Value": "*list*"
+      }
+    },
+    {
+      "Uid": "e4db57ee-8c1d-44f8-bd50-10b7f86cbde1",
+      "Name": "Grab List Items",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Scripting.ShellScript",
+      "xPos": 500,
+      "yPos": 390,
+      "Icon": "svg:bash",
+      "Label": "Shell Script (.sh)",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "2dcefc95-af1d-41ca-9673-180f950f6dde"
+        }
+      ],
+      "ErrorConnection": {
+        "Input": 1,
+        "Output": -1,
+        "InputNode": "563285aa-c3af-4ad1-b27d-3643df612ff1"
+      },
+      "Type": 2,
+      "Model": {
+        "Code": "WorkingFile=\u0022{file.FullName}\u0022\nOriginalDir=\u0022{folder.Orig.FullName}\u0022\n\n# Run yt-dlp\n/app/common/yt-dlp/yt-dlp \\\n    -a \u0022${WorkingFile}\u0022 \\\n    --output \u0022${OriginalDir}/%(album)s/%(title)s.%(ext)s\u0022 \\\n    --format bestaudio \\\n    --extract-audio \\\n    --audio-format mp3 \\\n    --audio-quality 0 \\\n    --embed-thumbnail \\\n    --embed-metadata \\\n    --convert-thumbnails jpg \\\n    --ppa \u0022EmbedThumbnail\u002Bffmpeg_o:-c:v mjpeg -vf crop=\u0027if(gt(ih,iw),iw,ih):if(gt(iw,ih),ih,iw)\u0027\u0022 \\\n    --yes-playlist\n\necho \u0022Download completed successfully.\u0022\nexit 1",
+        "Outputs": 1
+      }
+    },
+    {
+      "Uid": "f6f94a75-7881-4560-b2d7-e1f74f06a9f1",
+      "Name": "Is File Not Empty",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Scripting.ShellScript",
+      "xPos": 500,
+      "yPos": 230,
+      "Icon": "svg:bash",
+      "Label": "Shell Script (.sh)",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "7550fc48-8eba-40eb-be1d-a98d568e05c0"
+        }
+      ],
+      "Type": 2,
+      "Model": {
+        "Code": "WorkingFile=\u0022{file.FullName}\u0022\n\n# Check file exists and is not empty\nif [[ ! -s \u0022${WorkingFile}\u0022 ]]; then\n    echo \u0022File is empty or does not exist: ${WorkingFile}\u0022\n    exit 0\nelse\n    echo \u0022${WorkingFile} is Not empty\u0022\n    exit 1\nfi",
+        "Outputs": 1
+      }
+    },
+    {
+      "Uid": "7550fc48-8eba-40eb-be1d-a98d568e05c0",
+      "Name": "List File Has Items",
+      "Color": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Scripting.ShellScript",
+      "xPos": 500,
+      "yPos": 310,
+      "Icon": "svg:bash",
+      "Label": "Shell Script (.sh)",
+      "Inputs": 1,
+      "Outputs": 1,
+      "OutputConnections": [
+        {
+          "Input": 1,
+          "Output": 1,
+          "InputNode": "e4db57ee-8c1d-44f8-bd50-10b7f86cbde1"
+        }
+      ],
+      "Type": 2,
+      "Model": {
+        "Code": "WorkingFile=\u0022{file.FullName}\u0022\n# Check if file contains at least one URL\nif ! grep -Eq \u0027https?://\u0027 \u0022${WorkingFile}\u0022; then\n    echo \u0022No URLs found in list file: ${WorkingFile}\u0022\n    exit 0\nelse\n    echo \u0022List file ${WorkingFile} contains at least one URL\u0022\n    exit 1\nfi",
+        "Outputs": 1
+      }
+    },
+    {
+      "Uid": "2dcefc95-af1d-41ca-9673-180f950f6dde",
+      "Name": "",
+      "ReadOnly": false,
+      "FlowElementUid": "FileFlows.BasicNodes.Functions.CompleteFlow",
+      "xPos": 610,
+      "yPos": 490,
+      "Icon": "fas fa-check-square",
+      "Label": "Complete Flow",
+      "Inputs": 1,
+      "Outputs": 0,
+      "CustomColor": "var(--success)",
+      "Type": 3,
+      "Model": {}
+    }
+  ]
+}
